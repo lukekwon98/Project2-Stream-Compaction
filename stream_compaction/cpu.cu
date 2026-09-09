@@ -20,7 +20,28 @@ namespace StreamCompaction {
         void scan(int n, int *odata, const int *idata) {
             timer().startCpuTimer();
             // TODO
+            if (n <= 0) {
+                timer().endCpuTimer();
+                return;
+            }
+
+            odata[0] = 0;
+            for (int k = 1; k < n; ++k) {
+                odata[k] = odata[k - 1] + idata[k - 1];
+            }
             timer().endCpuTimer();
+        }
+
+        void scanWithoutTimer(int n, int* odata, const int* idata) {
+            // TODO
+            if (n <= 0) {
+                return;
+            }
+
+            odata[0] = 0;
+            for (int k = 1; k < n; ++k) {
+                odata[k] = odata[k - 1] + idata[k - 1];
+            }
         }
 
         /**
@@ -31,8 +52,22 @@ namespace StreamCompaction {
         int compactWithoutScan(int n, int *odata, const int *idata) {
             timer().startCpuTimer();
             // TODO
+            if (n <= 0) {
+                timer().endCpuTimer();
+                return 0;
+            }
+
+            int num = 0;
+
+            for (int k = 0; k < n; ++k) {
+                if (idata[k] != 0) {
+                    odata[num] = idata[k];
+                    ++num;
+                }
+            }
+
             timer().endCpuTimer();
-            return -1;
+            return num;
         }
 
         /**
@@ -43,8 +78,37 @@ namespace StreamCompaction {
         int compactWithScan(int n, int *odata, const int *idata) {
             timer().startCpuTimer();
             // TODO
+            if (n <= 0) {
+                timer().endCpuTimer();
+                return 0;
+            }
+
+            int* tempBoolList = new int[n]{};
+            int* scannedBoolList = new int[n];
+            for (int k = 0; k < n; k++) {
+                if (idata[k] != 0) {
+                    tempBoolList[k] = 1;
+                }
+                else {
+                    tempBoolList[k] = 0;
+                }
+            }
+
+            scanWithoutTimer(n, scannedBoolList, tempBoolList);
+
+            int num = 0;
+            for (int k = 0; k < n; k++) {
+                if (tempBoolList[k] == 1) {
+                    odata[scannedBoolList[k]] = idata[k];
+                    num++;
+                }
+            }
+            
+            delete[] tempBoolList;
+            delete[] scannedBoolList;
             timer().endCpuTimer();
-            return -1;
+
+            return num;
         }
     }
 }
