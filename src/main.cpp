@@ -147,6 +147,20 @@ int main(int argc, char* argv[]) {
     //printArray(count, c, true);
     printCmpLenResult(count, expectedNPOT, b, c);
 
+    zeroArray(SIZE, c);
+    printDesc("thrust remove_if, power-of-two");
+    count = StreamCompaction::Thrust::thrustStreamCompaction(SIZE, c, a);
+    printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    //printArray(count, c, true);
+    printCmpLenResult(count, expectedCount, b, c);
+
+    zeroArray(SIZE, c);
+    printDesc("thrust remove_if, non-power-of-two");
+    count = StreamCompaction::Thrust::thrustStreamCompaction(NPOT, c, a);
+    printElapsedTime(StreamCompaction::Thrust::timer().getGpuElapsedTimeForPreviousOperation(), "(CUDA Measured)");
+    //printArray(count, c, true);
+    printCmpLenResult(count, expectedNPOT, b, c);
+
     system("pause"); // stop Win32 console from closing on exit
     delete[] a;
     delete[] b;
