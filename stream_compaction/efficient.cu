@@ -144,14 +144,6 @@ namespace StreamCompaction {
             cudaFree(dev_tempBoolList);
             cudaFree(dev_streamCompactResult);
 
-            int device;
-            cudaGetDevice(&device);
-
-            cudaDeviceProp prop;
-            cudaGetDeviceProperties(&prop, device);
-
-            printf("maxGridSize.x = %d\n", prop.maxGridSize[0]);
-
             return numCompact;
         }
     }
