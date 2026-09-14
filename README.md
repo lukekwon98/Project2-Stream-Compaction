@@ -11,7 +11,7 @@ CUDA Stream Compaction
 
 ### Block Optimization Per Custom GPU Algorithm
 ```
-Block Size	Naive	Efficient - No Opt	Efficient - Opt
+Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 32	        9.11	8.39	            2.35
 64	        5.58	5.05	            2.40
 128	        5.53	3.64	            2.45
