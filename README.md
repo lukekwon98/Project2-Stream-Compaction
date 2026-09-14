@@ -12,7 +12,7 @@ CUDA Stream Compaction
 ### Block Optimization Per Custom GPU Algorithm
 <img width="600" height="371" alt="chart (1)" src="https://github.com/user-attachments/assets/179d5158-4fab-4a1b-abf0-388eff7e4b3f" />
 
-```
+```text
 Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 32	        9.11	    8.39	                  2.35
 64	        5.58	    5.05	                  2.40
@@ -26,7 +26,7 @@ Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 ### Performance Per Array Size
 <img width="600" height="371" alt="chart" src="https://github.com/user-attachments/assets/ff181767-367c-4a5d-8ec4-f91b18adbc14" />
 
-```
+```text
 Array Size    CPU (ms)    Naive (ms)    Efficient - No Opt (ms)    Efficient - Opt (ms)    Thrust (ms)
 500,000       0.23        0.39          0.32                       0.29                     0.05
 1,000,000     0.74        0.76          0.54                       0.46                     0.38
