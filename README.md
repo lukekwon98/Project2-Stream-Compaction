@@ -7,7 +7,11 @@ CUDA Stream Compaction
   * [LinkedIn](https://www.linkedin.com/in/hyukchekwon/), [Personal Website](https://lukekwon98.github.io/)
 * Tested on: Windows 11, AMD Ryzen 5 5600X 6-Core Processor @ ~3.7GHz 16GB, Nvidia GeForce RTX 3060 (Compute Capability 8.6)
 
-## List of Features
+## Project Description
+
+This project implements and compares CPU and GPU algorithms for the scan operation and stream compaction using CUDA. It includes a serial CPU baseline, a naive parallel GPU scan, a work-efficient scan, and NVIDIA Thrust implementations. The project also evaluates performance across different array sizes and block sizes, including an optimized work-efficient scan that reduces unnecessary thread launches at each tree level.
+
+### List of Features
 
 * CPU Exclusive Scan
 * CPU stream compaction with and without scan
