@@ -14,7 +14,7 @@ CUDA Stream Compaction
 * Naive CUDA exclusive scan
 * Work-efficient CUDA exclusive scan
 * CUDA stream compaction using map, scan, and scatter
-* Thrust exclusiv escan
+* Thrust exclusive scan
 * Thrust steam compaction using thrust::remove_if
 * Support for non-power-of-two input arrays
 * Extra credit: work-efficient scan optimization that launches only the number of threads required at each upper/down sweep level
