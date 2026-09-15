@@ -76,7 +76,9 @@ Array Size    CPU (ms)    Naive (ms)    Efficient - No Opt (ms)    Efficient - O
 10,000,000    4.98        6.75          6.12                       4.57                     0.65
 ```
 
-### CPU vs Navie GPU Scan
+### Observations
+
+#### CPU vs Navie GPU Scan
 
 The naive GPU scan was consistently slower than the serial CPU scan for the tested sizes. At 10 million elements, the CPU scan completed in 4.98 ms while the naive GPU scan took 6.75 ms.
 
@@ -84,7 +86,7 @@ Although the naive implementation performs the individual operations in parallel
 
 As a result, the additional global memory traffic and repeated kernel launch overhead of the naive GPU implementation outweigh the benefit of parallel execution for the tested sizes.
 
-### Work-Efficient scan
+#### Work-Efficient scan
 
 The work-efficient implementation reduces the total amount of scan work from O(nlogn) to O(n) by using an up-sweep and down-sweep on a balanced tree.
 
@@ -96,7 +98,7 @@ Inputs within each range therefore operate on the same padded array size and per
 
 
 
-### Performance Bottlenecks
+#### Performance Bottlenecks
 
 The serial CPU scan performs only O(n) work and accesses memory sequentially, giving it good cache behavior, but it cannot exploit the large amount of parallelism available on the GPU.
 
