@@ -144,7 +144,7 @@ Inspect the Thrust execution timeline and describe the kernels and any allocatio
 
 ## Test Output - Array size: 10000000, 10 runs per test
 
-```
+```text
 *****************************
 **     SCAN CORRECTNESS    **
 *****************************
