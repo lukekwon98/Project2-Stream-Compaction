@@ -103,9 +103,18 @@ At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which 
 
 Thrust's exclusive_scan substantially outperformed all custom scan implementations. At 10 million elements, Thrust completed the scan in approximately 0.65 ms compared with 4.57 ms for the optimized work-efficient implementation.
 
-**TODO: Add Nsight Systems/Compute screenshot and analysis**
+### Nsight Systems - Timeline
+<img width="1956" height="677" alt="Screenshot 2026-09-15 001328" src="https://github.com/user-attachments/assets/9a1f027a-609c-48de-94db-c137ded8eb45" />
+<img width="1962" height="678" alt="Screenshot 2026-09-15 001559" src="https://github.com/user-attachments/assets/cf1ec2af-e585-449a-aab2-f03615c8b78a" />
+<img width="1972" height="713" alt="Screenshot 2026-09-15 001620" src="https://github.com/user-attachments/assets/d182d09d-eb60-46d8-a0a5-add7f2fa2cfa" />
 
-Inspect the Thrust execution timeline and describe the kernels and any allocation or memory-copy behavior visible in the profile
+### Nsight Compute - Details
+<img width="1972" height="358" alt="Screenshot 2026-09-15 002157" src="https://github.com/user-attachments/assets/92093b23-8380-4629-96a9-4fe7e6e3db93" />
+<img width="2462" height="1117" alt="Screenshot 2026-09-15 002404" src="https://github.com/user-attachments/assets/e2cca027-dc08-432c-ad55-0e1934c73199" />
+
+Nsight Systems showed that thrust::exclusive_scan launches lower level internal GPU kernels. The actual scan consisted primarily of a small DeviceScanInitKernel followed by a larger DeviceScanKernel. An additional _kernel_agent kernel appeared before the scan kernels. Its launch contained one thread per array element and occurred after the host-to-device input copy but before exclusive_scan, suggesting that it is associated with initialization of the output device_vector rather than the scan itself.
+
+Further profiling of DeviceScanKernel with Nsight Compute showed that it used 128 threads per block, 56 registers per thread, and approximately 7.7 KB of shared memory per block. The kernel achieved 72.77% occupancy compared with a theoretical occupancy of 75%, with occupancy limited primarily by register usage. The main kernel reached 88.85% memory while compute throughput was only 46.14%, suggesting that the scan is more constrained by memory bandwidth rather than arithmetic throughput. Unlike my custom work-efficient implementation, which performs each up-sweep and down-sweep level as a separate global-memory kernel launch, Thrust uses fewer internal scan kernels and makes use of shared memory within the main kernel. These differences likely contribute to Thrust's significantly lower execution time.
 
 ## Test Output - Array size: 10000000, 10 runs per test
 
