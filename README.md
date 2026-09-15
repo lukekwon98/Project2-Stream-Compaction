@@ -93,7 +93,7 @@ The baseline work-efficient implementation launched the same maximum-sized grid 
 | 9,000,000 | 6.14 | 4.52 |
 | 10,000,000 | 6.12 | 4.57 |
 
-At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which corresponds to approximately a 25% reduction in runtime compared with the independently tuned baseline implementation.
+At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which corresponds to approximately a 25% reduction in runtime compared with the baseline implementation.
 
 ## Thrust Analysis
 
