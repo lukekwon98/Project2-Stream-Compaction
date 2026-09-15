@@ -7,7 +7,24 @@ CUDA Stream Compaction
   * [LinkedIn](https://www.linkedin.com/in/hyukchekwon/), [Personal Website](https://lukekwon98.github.io/)
 * Tested on: Windows 11, AMD Ryzen 5 5600X 6-Core Processor @ ~3.7GHz 16GB, Nvidia GeForce RTX 3060 (Compute Capability 8.6)
 
+## List of Features
+
+* CPU Exclusive Scan
+* CPU stream compaction with and without scan
+* Naive CUDA exclusive scan
+* Work-efficient CUDA exclusive scan
+* CUDA stream compaction using map, scan, and scatter
+* Thrust exclusiv escan
+* Thrust steam compaction using thrust::remove_if
+* Support for non-power-of-two input arrays
+* Extra credit: work-efficient scan optimization that launches only the number of threads required at each upper/down sweep level
+
 ## Performance Analysis
+
+All performance tests were run in Release mode without debugging. Initial/final memory operations such as cudaMalloc and cudaMemcpy were excluded from the measured execution time.
+
+Each result was measured as the median over 10 runs. Block sizes were independently tuned for each custom CUDA scan implementation, and the best observed block size for each implementation was used for the array size performance comparison.
+
 
 ### Block Optimization Per Custom GPU Algorithm
 <img width="600" height="371" alt="chart (1)" src="https://github.com/user-attachments/assets/179d5158-4fab-4a1b-abf0-388eff7e4b3f" />
@@ -21,6 +38,24 @@ Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 512	        5.54	    3.10	                  2.43
 1024	    6.25	    3.69	                  2.48
 ```
+
+The best observed block size was 128 threads for the naive scan, 256 threads for the unoptimized work-efficient scan.
+
+The naive implementation improved substantially from 32 to 64 threads per block, but its performance was nearly the same between 64 and 512 threads. Although 128 threads produced the lowest measured runtime of 5.53 ms, the results between 64 and 512 threads differed only by 0.05 ms.
+
+The unoptimized work-efficient scan was noticeably more responsive to block size, as runtime decreased from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes.
+
+Interestingly, the optimized work-efficient implementation was relatively insensitive to block size. Its runtime varied only from 2.35ms to 2.48 ms across all tested configuration, which is a difference of only 0.13 ms. The best observed result was when the block size was 32.
+
+One reason the optimized implementation may perform well with smaller blocks is that the number of useful operations decreases rapidly toward the root of the up-sweep and begins small during the down-sweep. Since the optimized implementation changes its launch size at each tree level, smaller block size may reduce the number of inactive threads in partially filled blocks at the narrower levels.
+
+For all following tests, each implementation was run using the following block sizes:
+
+| Implementation | Block Size |
+|---|---:|
+| Naive | 128 |
+| Efficient - No Optimization | 256 |
+| Efficient - Optimized | 32 |
 
 
 ### Performance Per Array Size
@@ -40,3 +75,81 @@ Array Size    CPU (ms)    Naive (ms)    Efficient - No Opt (ms)    Efficient - O
 9,000,000     4.56        6.08          6.14                       4.52                     0.67
 10,000,000    4.98        6.75          6.12                       4.57                     0.65
 ```
+
+### CPU vs Navie GPU Scan
+
+The naive GPU scan was consistently slower than the serial CPU scan for the tested sizes. At 10 million elements, the CPU scan completed in 4.98 ms while the naive GPU scan took 6.75 ms.
+
+Although the naive implementation performs the individual operations in parallel, it performs approximately O(nlogn) total work. Each level of the scan processes approximately the entire array, and each level requires a separate kernel launch, whereas the serial CPU scan performs only O(n) instructions in a single pass.
+
+As a result, the additional global memory traffic and repeated kernel launch overhead of the naive GPU implementation outweigh the benefit of parallel execution for the tested sizes.
+
+### Work-Efficient scan
+
+The work-efficient implementation reduces the total amount of scan work from O(nlogn) to O(n) by using an up-sweep and down-sweep on a balanced tree.
+
+The optimized work-efficient scan consequently outperformed the naive implementation for all tested array sizes and also surpassed the CPU implementation at larger input sizes. For example, at 8 million elements, the CPU implementation required 4.35 ms while the optimized work-efficient GPU scan only took 2.35 ms.
+
+A stair-step pattern is visible in both work-efficient implementations, which occurs because non-power-of-two inputs are padded to the next power of two before performing the tree based scan. For example, 3M-4M elements will be padded to 2^22, and 5M-8M elements will be padded to 2^23 elements.
+
+Inputs within each range therefore operate on the same padded array size and perform nearly the same amount of scan work. This also explains why execution time remains almost constant within these ranges. 
+
+### Performance Bottlenecks
+
+The primary bottlenecks differ between implementations.
+
+The serial CPU scan performs only O(n) work and accesses memory sequentially, giving it good cache behavior, but it cannot exploit the large amount of parallelism available on the GPU.
+
+The naive GPU scan exposes significant parallelism, but performs O(nlogn) work. Every scan level reads and writes a large portion of the array in global memory and requires another kernel launch. Its performance is therefore limited by both global-memory traffic and repeated launch overhead.
+
+The work-efficient scan performs only O(n) arithmetic work, but its tree structure causes amount of available parallel work to decrease by half at every up-sweep level and increase from a single operation during the down-sweep. Therefore, near the root of the tree, there are too few useful threads to fully utilize the GPU.
+
+The power-of-two padding required by this implementation also introduces additional work for non-power-of-two inputs. An input slightly larger than a power of two may require almost twice as much intermediate storage and tree work.
+
+Thrust significantly outperformed the custom implementations, reaching only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient implementation. Thrust uses a substantially more optimized scan implementation than the simple global-memory tree scan implemented in this project.
+
+## Extra Credit: Work-Efficient Thread Launch Optimization
+
+The initial work-efficient implementation launched the same maximum-sized grid at every level of both the up-sweep and down-sweep.
+
+However, the amount of useful parallel work changes at every tree level. During the up-sweep, the number of required operations is reduced by half each step, and the down-sweep performs the reverse progression.
+
+Launching the maximum number of threads at every level therefore causes an increasingly large fraction of threads to immediately fail the bounds check and perform no useful work.
+
+The optimized implementation instead computes the number of useful threads required for each individual tree level and launches only enough blocks to cover those threads.
+
+The performance improvement is visible across all tested array sizes:
+
+```text
+Array Size    Efficient - No Opt (ms)    Efficient - Opt (ms)
+5,000,000     3.11                       2.33
+8,000,000     3.07                       2.35
+9,000,000     6.14                       4.52
+10,000,000    6.12                       4.57
+```
+
+At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which corresponds to approximately a 25% reduction in runtime compared with the independently tuned baseline implementation.
+
+Both versions were independently tuned for their best observed block size: 256 threads per block for the baseline and 32 threads per block for the optimized implementation. Therefore, this comparison represents the best observed performance of each implementation rather than isolating the launch-count optimization as the only changing variable.
+
+The optimized scan is also used internally by the work-efficient stream compaction implementation.
+
+## Thrust Analysis
+
+Thrust's exclusive_scan substantially outperformed all custom scan implementations. At 10 million elements, Thrust completed the scan in approximately 0.65 ms compared with 4.57 ms for the optimized work-efficient implementation.
+
+**TODO: Add Nsight Systems/Compute screenshot and analysis here.**
+
+Inspect the Thrust execution timeline and describe the kernels and any allocation or memory-copy behavior visible in the profile. The assignment only requires a brief investigation of what appears to happen internally.
+
+## Stream Compaction
+
+The GPU stream-compaction implementation consists of three stages:
+
+1. Map each input value to `1` if it is nonzero and `0` otherwise.
+2. Perform an exclusive work-efficient scan over the boolean array.
+3. Scatter each surviving input element to the index produced by the scan.
+
+The optimized work-efficient scan described above is used for the scan stage.
+
+In addition to the required custom CUDA stream compaction, thrust::remove_if was implemented and tested as an additional comparison. The 
