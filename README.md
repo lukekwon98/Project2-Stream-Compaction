@@ -86,13 +86,12 @@ The work-efficient scan reduces the total instructions to O(n), but the amount o
 
 The baseline work-efficient implementation launched the same maximum-sized grid at every level of both the up sweep and down sweep. However, the number of useful operations changes by a factor of two at each tree level, so an increasingly large fraction of those threads perform no useful work and immediately return after the bounds check. The optimized version instead computes the number of useful threads required at each level and launches only enough blocks to cover them. This reduces unnecessary thread scheduling while preserving the same scan algorithm, and the performance improvement is visible across all tested array sizes:
 
-```text
-Array Size    Efficient - No Opt (ms)    Efficient - Opt (ms)
-5,000,000     3.11                       2.33
-8,000,000     3.07                       2.35
-9,000,000     6.14                       4.52
-10,000,000    6.12                       4.57
-```
+| Array Size | Efficient - No Opt (ms) | Efficient - Opt (ms) |
+|---:|---:|---:|
+| 5,000,000 | 3.11 | 2.33 |
+| 8,000,000 | 3.07 | 2.35 |
+| 9,000,000 | 6.14 | 4.52 |
+| 10,000,000 | 6.12 | 4.57 |
 
 At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which corresponds to approximately a 25% reduction in runtime compared with the independently tuned baseline implementation.
 
