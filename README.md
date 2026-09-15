@@ -94,6 +94,8 @@ A stair-step pattern is visible in both work-efficient implementations, which oc
 
 Inputs within each range therefore operate on the same padded array size and perform nearly the same amount of scan work. This also explains why execution time remains almost constant within these ranges. 
 
+
+
 ### Performance Bottlenecks
 
 The serial CPU scan performs only O(n) work and accesses memory sequentially, giving it good cache behavior, but it cannot exploit the large amount of parallelism available on the GPU.
@@ -136,18 +138,8 @@ The optimized scan is also used internally by the work-efficient stream compacti
 
 Thrust's exclusive_scan substantially outperformed all custom scan implementations. At 10 million elements, Thrust completed the scan in approximately 0.65 ms compared with 4.57 ms for the optimized work-efficient implementation.
 
-**TODO: Add Nsight Systems/Compute screenshot and analysis here.**
+**TODO: Add Nsight Systems/Compute screenshot and analysis**
 
-Inspect the Thrust execution timeline and describe the kernels and any allocation or memory-copy behavior visible in the profile. The assignment only requires a brief investigation of what appears to happen internally.
+Inspect the Thrust execution timeline and describe the kernels and any allocation or memory-copy behavior visible in the profile
 
-## Stream Compaction
-
-The GPU stream-compaction implementation consists of three stages:
-
-1. Map each input value to `1` if it is nonzero and `0` otherwise.
-2. Perform an exclusive work-efficient scan over the boolean array.
-3. Scatter each surviving input element to the index produced by the scan.
-
-The optimized work-efficient scan described above is used for the scan stage.
-
-In addition to the required custom CUDA stream compaction, thrust::remove_if was implemented and tested as an additional comparison. The 
+## Test Output
