@@ -39,15 +39,9 @@ Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 1024	    6.25	    3.69	                  2.48
 ```
 
-The best observed block size was 128 threads for the naive scan, 256 threads for the unoptimized work-efficient scan.
+The best observed block sizes were 128 threads for the naive scan and 256 threads for the unoptimized work-efficient scan. The naive implementation improved substantially from 32 to 64 threads per block, but performance remained nearly flat from 64 to 512 threads, with only a 0.05 ms difference across that range. Although 128 threads produced the lowest runtime at 5.53 ms, several neighboring block sizes performed almost identically.
 
-The naive implementation improved substantially from 32 to 64 threads per block, but its performance was nearly the same between 64 and 512 threads. Although 128 threads produced the lowest measured runtime of 5.53 ms, the results between 64 and 512 threads differed only by 0.05 ms.
-
-The unoptimized work-efficient scan was noticeably more responsive to block size, as runtime decreased from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes.
-
-Interestingly, the optimized work-efficient implementation was relatively insensitive to block size. Its runtime varied only from 2.35ms to 2.48 ms across all tested configuration, which is a difference of only 0.13 ms. The best observed result was when the block size was 32.
-
-One reason the optimized implementation may perform well with smaller blocks is that the number of useful operations decreases rapidly toward the root of the up-sweep and begins small during the down-sweep. Since the optimized implementation changes its launch size at each tree level, smaller block size may reduce the number of inactive threads in partially filled blocks at the narrower levels.
+The unoptimized work-efficient scan was much more sensitive to block size, with runtime decreasing from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes. In contrast, the optimized work-efficient scan was relatively insensitive to block size, varying only from 2.35 ms to 2.48 ms across all tested configurations, with the best result at 32 threads per block. A likely reason the optimized implementation performs well with smaller blocks is that the amount of useful work shrinks rapidly toward the root of the up-sweep and starts small during the down-sweep. Because the optimized version adjusts its launch size at each tree level, smaller blocks can reduce the number of inactive threads in partially filled blocks at these narrower levels.
 
 For all following tests, each implementation was run using the following block sizes:
 
