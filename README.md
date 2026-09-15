@@ -19,7 +19,7 @@ This project implements and compares CPU and GPU algorithms for the scan operati
 * Work-efficient CUDA exclusive scan
 * CUDA stream compaction using map, scan, and scatter
 * Thrust exclusive scan
-* Thrust steam compaction using thrust::remove_if
+* Thrust stream compaction using thrust::remove_if
 * Support for non-power-of-two input arrays
 * Extra credit: work-efficient scan optimization that launches only the number of threads required at each upper/down sweep level
 
@@ -42,7 +42,7 @@ All performance tests were run in Release mode without debugging. Initial/final 
 
 The best observed block sizes were 128 threads for the naive scan and 256 threads for the unoptimized work-efficient scan. The naive implementation improved substantially from 32 to 64 threads per block, but performance remained nearly flat from 64 to 512 threads, with only a 0.05 ms difference across that range. Although 128 threads produced the lowest runtime at 5.53 ms, several neighboring block sizes performed almost identically.
 
-The unoptimized work-efficient scan was much more sensitive to block size, with runtime decreasing from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes. In contrast, the optimized work-efficient scan was relatively insensitive to block size, varying only from 2.35 ms to 2.48 ms across all tested configurations, with the best result at 32 threads per block. A likely reason the optimized implementation performs well with smaller blocks is that the amount of useful work shrinks rapidly toward the root of the up-sweep and starts small during the down-sweep. Because the optimized version adjusts its launch size at each scan level, smaller blocks can reduce the number of inactive threads in partially filled blocks at these narrower levels. For all following tests, each implementation was run using the following block sizes:
+The unoptimized work-efficient scan was much more sensitive to block size, with runtime decreasing from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes. In contrast, the optimized work-efficient scan was relatively insensitive to block size, varying only from 2.35 ms to 2.48 ms across all tested configurations, with the best result at 32 threads per block. A likely reason the optimized implementation performs well with smaller blocks is that the amount of useful work shrinks rapidly toward the root of the up sweep and starts small during the down sweep. Because the optimized version adjusts its launch size at each scan level, smaller blocks can reduce the number of inactive threads in partially filled blocks at these narrower levels. For all following tests, each implementation was run using the following block sizes:
 
 | Implementation | Block Size |
 |---|---:|
@@ -117,15 +117,15 @@ Nsight Systems showed that thrust::exclusive_scan launches lower level internal 
 
 Further profiling of DeviceScanKernel with Nsight Compute showed that it used 128 threads per block, 56 registers per thread, and approximately 7.7 KB of shared memory per block. The kernel achieved 72.77% occupancy compared with a theoretical occupancy of 75%, with occupancy limited primarily by register usage. The main kernel reached 88.85% memory throughput while compute throughput was only 46.14%, suggesting that the scan is more constrained by memory bandwidth than by instruction throughput. Unlike my custom work-efficient implementation, which performs each up sweep and down sweep level as a separate global memory kernel launch, Thrust uses fewer internal scan kernels and makes use of shared memory within the main kernel. These differences likely contribute to Thrust's significantly lower execution time.
 
-## Test Output - Array size: 10000000, 10 runs per test
+## Test Output - Array size: 2^23, 10 runs per test
 
 ```text
 *****************************
 **     SCAN CORRECTNESS    **
 *****************************
-    [  15   1  22  27   1  15  31   7  40  11  23  34  48 ...  23   0 ]
+    [  47  14  44  14   9  33  39  14  31  28   7  49  26 ...  44   0 ]
 ==== cpu scan, power-of-two ====
-    [   0  15  16  38  65  66  81 112 119 159 170 193 227 ... 244908114 244908137 ]
+    [   0  47  61 105 119 128 161 200 214 245 273 280 329 ... 205427588 205427632 ]
 ==== cpu scan, non-power-of-two ====
     passed
 ==== naive scan, power-of-two ====
@@ -148,7 +148,7 @@ Further profiling of DeviceScanKernel with Nsight Compute showed that it used 12
 *****************************
 ** COMPACTION CORRECTNESS  **
 *****************************
-    [   1   1   2   3   3   3   1   3   0   3   1   2   0 ...   1   0 ]
+    [   0   0   2   3   3   3   3   1   0   0   3   1   3 ...   1   0 ]
 ==== cpu compact without scan, power-of-two ====
     passed
 ==== cpu compact without scan, non-power-of-two ====
@@ -169,26 +169,26 @@ Further profiling of DeviceScanKernel with Nsight Compute showed that it used 12
 *****************************
 **    SCAN PERFORMANCE     **
 *****************************
-CPU scan, power-of-two                                  Avg:     4.36 ms | Median:     4.33 ms | Min:     4.23 ms | Max:     4.52 ms
-CPU scan, non-power-of-two                              Avg:     4.53 ms | Median:     4.52 ms | Min:     4.27 ms | Max:     5.14 ms
-Naive scan, power-of-two                                Avg:     7.10 ms | Median:     6.79 ms | Min:     6.75 ms | Max:     8.58 ms
-Naive scan, non-power-of-two                            Avg:     6.84 ms | Median:     6.80 ms | Min:     6.75 ms | Max:     7.28 ms
-Work-efficient scan, unoptimized, power-of-two          Avg:     6.26 ms | Median:     6.28 ms | Min:     6.13 ms | Max:     6.42 ms
-Work-efficient scan, unoptimized, non-power-of-two      Avg:     6.20 ms | Median:     6.15 ms | Min:     6.12 ms | Max:     6.67 ms
-Work-efficient scan, optimized, power-of-two            Avg:     4.61 ms | Median:     4.53 ms | Min:     4.51 ms | Max:     5.17 ms
-Work-efficient scan, optimized, non-power-of-two        Avg:     4.58 ms | Median:     4.56 ms | Min:     4.53 ms | Max:     4.74 ms
-Thrust scan, power-of-two                               Avg:     0.67 ms | Median:     0.66 ms | Min:     0.66 ms | Max:     0.70 ms
-Thrust scan, non-power-of-two                           Avg:     0.69 ms | Median:     0.67 ms | Min:     0.66 ms | Max:     0.84 ms
+CPU scan, power-of-two                                  Avg:     3.60 ms | Median:     3.57 ms | Min:     3.49 ms | Max:     3.72 ms
+CPU scan, non-power-of-two                              Avg:     3.64 ms | Median:     3.54 ms | Min:     3.48 ms | Max:     4.15 ms
+Naive scan, power-of-two                                Avg:     5.59 ms | Median:     5.53 ms | Min:     5.46 ms | Max:     6.20 ms
+Naive scan, non-power-of-two                            Avg:     5.56 ms | Median:     5.48 ms | Min:     5.47 ms | Max:     6.16 ms
+Work-efficient scan, unoptimized, power-of-two          Avg:     3.11 ms | Median:     3.06 ms | Min:     3.04 ms | Max:     3.46 ms
+Work-efficient scan, unoptimized, non-power-of-two      Avg:     3.18 ms | Median:     3.05 ms | Min:     3.03 ms | Max:     4.01 ms
+Work-efficient scan, optimized, power-of-two            Avg:     2.37 ms | Median:     2.35 ms | Min:     2.32 ms | Max:     2.45 ms
+Work-efficient scan, optimized, non-power-of-two        Avg:     2.40 ms | Median:     2.40 ms | Min:     2.34 ms | Max:     2.45 ms
+Thrust scan, power-of-two                               Avg:     0.63 ms | Median:     0.64 ms | Min:     0.59 ms | Max:     0.69 ms
+Thrust scan, non-power-of-two                           Avg:     0.62 ms | Median:     0.61 ms | Min:     0.60 ms | Max:     0.64 ms
 
 *****************************
 ** COMPACTION PERFORMANCE  **
 *****************************
-CPU compact without scan, power-of-two                  Avg:    15.77 ms | Median:    15.67 ms | Min:    15.64 ms | Max:    16.24 ms
-CPU compact without scan, non-power-of-two              Avg:    16.38 ms | Median:    15.74 ms | Min:    15.63 ms | Max:    19.40 ms
-CPU compact with scan, power-of-two                     Avg:    44.42 ms | Median:    44.53 ms | Min:    41.30 ms | Max:    45.87 ms
-CPU compact with scan, non-power-of-two                 Avg:    45.64 ms | Median:    45.37 ms | Min:    44.26 ms | Max:    48.91 ms
-Work-efficient compact, power-of-two                    Avg:     5.94 ms | Median:     5.89 ms | Min:     5.83 ms | Max:     6.39 ms
-Work-efficient compact, non-power-of-two                Avg:     5.90 ms | Median:     5.88 ms | Min:     5.86 ms | Max:     6.02 ms
-Thrust remove_if, power-of-two                          Avg:     0.79 ms | Median:     0.79 ms | Min:     0.70 ms | Max:     0.86 ms
-Thrust remove_if, non-power-of-two                      Avg:     0.88 ms | Median:     0.89 ms | Min:     0.76 ms | Max:     0.96 ms
+CPU compact without scan, power-of-two                  Avg:    13.19 ms | Median:    13.19 ms | Min:    13.13 ms | Max:    13.23 ms
+CPU compact without scan, non-power-of-two              Avg:    13.27 ms | Median:    13.19 ms | Min:    13.11 ms | Max:    14.09 ms
+CPU compact with scan, power-of-two                     Avg:    37.74 ms | Median:    37.68 ms | Min:    36.98 ms | Max:    38.53 ms
+CPU compact with scan, non-power-of-two                 Avg:    36.83 ms | Median:    36.66 ms | Min:    36.08 ms | Max:    37.87 ms
+Work-efficient compact, power-of-two                    Avg:     3.59 ms | Median:     3.50 ms | Min:     3.46 ms | Max:     4.17 ms
+Work-efficient compact, non-power-of-two                Avg:     3.55 ms | Median:     3.50 ms | Min:     3.46 ms | Max:     4.03 ms
+Thrust remove_if, power-of-two                          Avg:     0.71 ms | Median:     0.69 ms | Min:     0.62 ms | Max:     0.84 ms
+Thrust remove_if, non-power-of-two                      Avg:     0.68 ms | Median:     0.68 ms | Min:     0.62 ms | Max:     0.74 ms
 ```
