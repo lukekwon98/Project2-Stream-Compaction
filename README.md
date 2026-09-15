@@ -21,9 +21,7 @@ CUDA Stream Compaction
 
 ## Performance Analysis
 
-All performance tests were run in Release mode without debugging. Initial/final memory operations such as cudaMalloc and cudaMemcpy were excluded from the measured execution time.
-
-Each result was measured as the median over 10 runs. Block sizes were independently tuned for each custom CUDA scan implementation, and the best observed block size for each implementation was used for the array size performance comparison.
+All performance tests were run in Release mode without debugging. Initial/final memory operations such as cudaMalloc and cudaMemcpy were excluded from the measured execution time. Each result was measured as the median over 10 runs. Block sizes were independently tuned for each custom CUDA scan implementation, and the best observed block size for each implementation was used for the array size performance comparison.
 
 
 ### Block Optimization Per Custom GPU Algorithm
