@@ -106,7 +106,7 @@ The naive GPU scan exposes significant parallelism, but performs O(nlogn) work. 
 
 The work-efficient scan performs only O(n) arithmetic work, but its tree structure causes amount of available parallel work to decrease by half at every up-sweep level and increase from a single operation during the down-sweep. Therefore, near the root of the tree, there are too few useful threads to fully utilize the GPU.
 
-The power-of-two padding required by this implementation also introduces additional work for non-power-of-two inputs. An input slightly larger than a power of two may require almost twice as much intermediate storage and tree work.
+The power-of-two padding required by this implementation also introduces additional work for non-power-of-two inputs. An input slightly larger than a power of two may require almost twice as much extra memory and instructions.
 
 Thrust significantly outperformed the custom implementations, reaching only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient implementation. Thrust uses a substantially more optimized scan implementation than the simple global-memory tree scan implemented in this project.
 
