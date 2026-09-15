@@ -41,9 +41,7 @@ Block Size	Naive (ms)	Efficient - No Opt (ms)	Efficient - Opt (ms)
 
 The best observed block sizes were 128 threads for the naive scan and 256 threads for the unoptimized work-efficient scan. The naive implementation improved substantially from 32 to 64 threads per block, but performance remained nearly flat from 64 to 512 threads, with only a 0.05 ms difference across that range. Although 128 threads produced the lowest runtime at 5.53 ms, several neighboring block sizes performed almost identically.
 
-The unoptimized work-efficient scan was much more sensitive to block size, with runtime decreasing from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes. In contrast, the optimized work-efficient scan was relatively insensitive to block size, varying only from 2.35 ms to 2.48 ms across all tested configurations, with the best result at 32 threads per block. A likely reason the optimized implementation performs well with smaller blocks is that the amount of useful work shrinks rapidly toward the root of the up-sweep and starts small during the down-sweep. Because the optimized version adjusts its launch size at each tree level, smaller blocks can reduce the number of inactive threads in partially filled blocks at these narrower levels.
-
-For all following tests, each implementation was run using the following block sizes:
+The unoptimized work-efficient scan was much more sensitive to block size, with runtime decreasing from 8.39 ms at 32 threads to 3.04 ms at 256 threads before increasing again at larger block sizes. In contrast, the optimized work-efficient scan was relatively insensitive to block size, varying only from 2.35 ms to 2.48 ms across all tested configurations, with the best result at 32 threads per block. A likely reason the optimized implementation performs well with smaller blocks is that the amount of useful work shrinks rapidly toward the root of the up-sweep and starts small during the down-sweep. Because the optimized version adjusts its launch size at each tree level, smaller blocks can reduce the number of inactive threads in partially filled blocks at these narrower levels. For all following tests, each implementation was run using the following block sizes:
 
 | Implementation | Block Size |
 |---|---:|
@@ -86,15 +84,11 @@ A stair-step pattern is visible in both work-efficient implementations because n
 
 Each implementation is limited by a different bottleneck. The serial CPU scan performs only O(n) work and benefits from sequential memory access, but it cannot exploit GPU-level parallelism. The naive GPU scan exposes much more parallelism, but its O(nlogn) work complexity causes repeated global memory reads and writes at every scan level, along with the overhead of multiple kernel launches.
 
-The work-efficient scan reduces the total instructions to O(n), but the amount of available parallelism decreases by half at each up sweep level and grows from only a single operation during the down sweep. Near the root of the tree, there are therefore too few active operations to fully utilize the GPU. Power-of-two padding also adds overhead for non-power-of-two inputs, since an input just above a power-of-two boundary can require nearly twice the padded memory and tree work.
-
-Thrust substantially outperformed all custom implementations, taking only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient scan. This indicates that Thrust uses a much more optimized scan strategy than the simple global-memory tree implementation used in this project.
+The work-efficient scan reduces the total instructions to O(n), but the amount of available parallelism decreases by half at each up sweep level and grows from only a single operation during the down sweep. Near the root of the tree, there are therefore too few active operations to fully utilize the GPU. Power-of-two padding also adds overhead for non-power-of-two inputs, since an input just above a power-of-two boundary can require nearly twice the padded memory and tree work. Thrust substantially outperformed all custom implementations, taking only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient scan. This indicates that Thrust uses a much more optimized scan strategy than the simple global-memory tree implementation used in this project.
 
 ## Extra Credit: Work-Efficient Thread Launch Optimization
 
-The baseline work-efficient implementation launched the same maximum-sized grid at every level of both the up sweep and down sweep. However, the number of useful operations changes by a factor of two at each tree level, so an increasingly large fraction of those threads perform no useful work and immediately return after the bounds check.
-
-The optimized version instead computes the number of useful threads required at each level and launches only enough blocks to cover them. This reduces unnecessary thread scheduling while preserving the same scan algorithm, and the performance improvement is visible across all tested array sizes:
+The baseline work-efficient implementation launched the same maximum-sized grid at every level of both the up sweep and down sweep. However, the number of useful operations changes by a factor of two at each tree level, so an increasingly large fraction of those threads perform no useful work and immediately return after the bounds check. The optimized version instead computes the number of useful threads required at each level and launches only enough blocks to cover them. This reduces unnecessary thread scheduling while preserving the same scan algorithm, and the performance improvement is visible across all tested array sizes:
 
 ```text
 Array Size    Efficient - No Opt (ms)    Efficient - Opt (ms)
@@ -105,10 +99,6 @@ Array Size    Efficient - No Opt (ms)    Efficient - Opt (ms)
 ```
 
 At 10 million elements, execution time decreased from 6.12 ms to 4.57 ms, which corresponds to approximately a 25% reduction in runtime compared with the independently tuned baseline implementation.
-
-Both versions were independently tuned for their best observed block size: 256 threads per block for the baseline and 32 threads per block for the optimized implementation. Therefore, this comparison represents the best observed performance of each implementation rather than isolating the launch-count optimization as the only changing variable.
-
-The optimized scan is also used internally by the work-efficient stream compaction implementation.
 
 ## Thrust Analysis
 
