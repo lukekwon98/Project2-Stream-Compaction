@@ -80,47 +80,27 @@ Array Size    CPU (ms)    Naive (ms)    Efficient - No Opt (ms)    Efficient - O
 
 #### CPU vs Navie GPU Scan
 
-The naive GPU scan was consistently slower than the serial CPU scan for the tested sizes. At 10 million elements, the CPU scan completed in 4.98 ms while the naive GPU scan took 6.75 ms.
-
-Although the naive implementation performs the individual operations in parallel, it performs approximately O(nlogn) total work. Each level of the scan processes approximately the entire array, and each level requires a separate kernel launch, whereas the serial CPU scan performs only O(n) instructions in a single pass.
-
-As a result, the additional global memory traffic and repeated kernel launch overhead of the naive GPU implementation outweigh the benefit of parallel execution for the tested sizes.
+The naive GPU scan was consistently slower than the serial CPU scan across the tested sizes. At 10 million elements, the CPU scan completed in 4.98 ms while the naive GPU scan took 6.75 ms. Although the naive implementation parallelizes each scan step, it still performs approximately O(nlogn) total work because every level processes most of the array and requires a separate kernel launch. In comparison, the serial CPU scan performs only O(n) work in a single sequential pass. As a result, the additional global memory and repeated kernel launch overhead outweigh the benefit of parallel execution for the tested input sizes.
 
 #### Work-Efficient scan
 
-The work-efficient implementation reduces the total amount of scan work from O(nlogn) to O(n) by using an up-sweep and down-sweep on a balanced tree.
+The work-efficient implementation reduces the total scan complexity from O(nlogn) to O(n) by using an optimized up sweep and down sweep over a balanced tree. This allows the optimized work-efficient scan to outperform the naive implementation across all tested array sizes and also surpass the CPU implementation for larger inputs. For example, at 8 million elements, the CPU scan took 4.35 ms while the optimized work-efficient scan completed in 2.35 ms.
 
-The optimized work-efficient scan consequently outperformed the naive implementation for all tested array sizes and also surpassed the CPU implementation at larger input sizes. For example, at 8 million elements, the CPU implementation required 4.35 ms while the optimized work-efficient GPU scan only took 2.35 ms.
-
-A stair-step pattern is visible in both work-efficient implementations, which occurs because non-power-of-two inputs are padded to the next power of two before performing the tree based scan. For example, 3M-4M elements will be padded to 2^22, and 5M-8M elements will be padded to 2^23 elements.
-
-Inputs within each range therefore operate on the same padded array size and perform nearly the same amount of scan work. This also explains why execution time remains almost constant within these ranges. 
-
-
+A stair-step pattern is visible in both work-efficient implementations because non-power-of-two inputs are padded to the next power of two before the scan. For example, inputs between 3M and 4M elements are padded to 2^22 elements, while inputs between 5M and 8M are padded to 2^23. Since inputs within each range operate on the same padded array size, they perform nearly the same amount of tree work, which explains the relatively flat runtime within each range and the sudden increases when the next power-of-two boundary is crossed.
 
 #### Performance Bottlenecks
 
-The serial CPU scan performs only O(n) work and accesses memory sequentially, giving it good cache behavior, but it cannot exploit the large amount of parallelism available on the GPU.
+Each implementation is limited by a different bottleneck. The serial CPU scan performs only O(n) work and benefits from sequential memory access, but it cannot exploit GPU-level parallelism. The naive GPU scan exposes much more parallelism, but its O(nlogn) work complexity causes repeated global memory reads and writes at every scan level, along with the overhead of multiple kernel launches.
 
-The naive GPU scan exposes significant parallelism, but performs O(nlogn) work. Every scan level reads and writes a large portion of the array in global memory and requires another kernel launch. Its performance is therefore limited by both global-memory traffic and repeated launch overhead.
+The work-efficient scan reduces the total instructions to O(n), but the amount of available parallelism decreases by half at each up sweep level and grows from only a single operation during the down sweep. Near the root of the tree, there are therefore too few active operations to fully utilize the GPU. Power-of-two padding also adds overhead for non-power-of-two inputs, since an input just above a power-of-two boundary can require nearly twice the padded memory and tree work.
 
-The work-efficient scan performs only O(n) arithmetic work, but its tree structure causes amount of available parallel work to decrease by half at every up-sweep level and increase from a single operation during the down-sweep. Therefore, near the root of the tree, there are too few useful threads to fully utilize the GPU.
-
-The power-of-two padding required by this implementation also introduces additional work for non-power-of-two inputs. An input slightly larger than a power of two may require almost twice as much extra memory and instructions.
-
-Thrust significantly outperformed the custom implementations, reaching only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient implementation. Thrust uses a substantially more optimized scan implementation than the simple global-memory tree scan implemented in this project.
+Thrust substantially outperformed all custom implementations, taking only 0.65 ms for 10 million elements compared with 4.57 ms for the optimized work-efficient scan. This indicates that Thrust uses a much more optimized scan strategy than the simple global-memory tree implementation used in this project.
 
 ## Extra Credit: Work-Efficient Thread Launch Optimization
 
-The initial work-efficient implementation launched the same maximum-sized grid at every level of both the up-sweep and down-sweep.
+The baseline work-efficient implementation launched the same maximum-sized grid at every level of both the up sweep and down sweep. However, the number of useful operations changes by a factor of two at each tree level, so an increasingly large fraction of those threads perform no useful work and immediately return after the bounds check.
 
-However, the amount of useful parallel work changes at every tree level. During the up-sweep, the number of required operations is reduced by half each step, and the down-sweep performs the reverse progression.
-
-Launching the maximum number of threads at every level therefore causes an increasingly large fraction of threads to immediately fail the bounds check and perform no useful work.
-
-The optimized implementation instead computes the number of useful threads required for each individual tree level and launches only enough blocks to cover those threads.
-
-The performance improvement is visible across all tested array sizes:
+The optimized version instead computes the number of useful threads required at each level and launches only enough blocks to cover them. This reduces unnecessary thread scheduling while preserving the same scan algorithm, and the performance improvement is visible across all tested array sizes:
 
 ```text
 Array Size    Efficient - No Opt (ms)    Efficient - Opt (ms)
