@@ -17,7 +17,7 @@ This project implements and compares CPU and GPU algorithms for the scan operati
 * CPU stream compaction with and without scan
 * Naive CUDA exclusive scan
 * Work-efficient CUDA exclusive scan
-* CUDA stream compaction using map, scan, and scatter
+* CUDA stream compaction using boolean map, scan, and scatter
 * Thrust exclusive scan
 * Thrust stream compaction using thrust::remove_if
 * Support for non-power-of-two input arrays
