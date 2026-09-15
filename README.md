@@ -96,8 +96,6 @@ Inputs within each range therefore operate on the same padded array size and per
 
 ### Performance Bottlenecks
 
-The primary bottlenecks differ between implementations.
-
 The serial CPU scan performs only O(n) work and accesses memory sequentially, giving it good cache behavior, but it cannot exploit the large amount of parallelism available on the GPU.
 
 The naive GPU scan exposes significant parallelism, but performs O(nlogn) work. Every scan level reads and writes a large portion of the array in global memory and requires another kernel launch. Its performance is therefore limited by both global-memory traffic and repeated launch overhead.
