@@ -142,4 +142,78 @@ Thrust's exclusive_scan substantially outperformed all custom scan implementatio
 
 Inspect the Thrust execution timeline and describe the kernels and any allocation or memory-copy behavior visible in the profile
 
-## Test Output
+## Test Output - Array size: 10000000, 10 runs per test
+
+```
+*****************************
+**     SCAN CORRECTNESS    **
+*****************************
+    [  15   1  22  27   1  15  31   7  40  11  23  34  48 ...  23   0 ]
+==== cpu scan, power-of-two ====
+    [   0  15  16  38  65  66  81 112 119 159 170 193 227 ... 244908114 244908137 ]
+==== cpu scan, non-power-of-two ====
+    passed
+==== naive scan, power-of-two ====
+    passed
+==== naive scan, non-power-of-two ====
+    passed
+==== work-efficient scan unoptimized, power-of-two ====
+    passed
+==== work-efficient scan unoptimized, non-power-of-two ====
+    passed
+==== work-efficient scan optimized, power-of-two ====
+    passed
+==== work-efficient scan optimized, non-power-of-two ====
+    passed
+==== thrust scan, power-of-two ====
+    passed
+==== thrust scan, non-power-of-two ====
+    passed
+
+*****************************
+** COMPACTION CORRECTNESS  **
+*****************************
+    [   1   1   2   3   3   3   1   3   0   3   1   2   0 ...   1   0 ]
+==== cpu compact without scan, power-of-two ====
+    passed
+==== cpu compact without scan, non-power-of-two ====
+    passed
+==== cpu compact with scan, power-of-two ====
+    passed
+==== cpu compact with scan, non-power-of-two ====
+    passed
+==== work-efficient compact, power-of-two ====
+    passed
+==== work-efficient compact, non-power-of-two ====
+    passed
+==== thrust remove_if, power-of-two ====
+    passed
+==== thrust remove_if, non-power-of-two ====
+    passed
+
+*****************************
+**    SCAN PERFORMANCE     **
+*****************************
+CPU scan, power-of-two                                  Avg:     4.36 ms | Median:     4.33 ms | Min:     4.23 ms | Max:     4.52 ms
+CPU scan, non-power-of-two                              Avg:     4.53 ms | Median:     4.52 ms | Min:     4.27 ms | Max:     5.14 ms
+Naive scan, power-of-two                                Avg:     7.10 ms | Median:     6.79 ms | Min:     6.75 ms | Max:     8.58 ms
+Naive scan, non-power-of-two                            Avg:     6.84 ms | Median:     6.80 ms | Min:     6.75 ms | Max:     7.28 ms
+Work-efficient scan, unoptimized, power-of-two          Avg:     6.26 ms | Median:     6.28 ms | Min:     6.13 ms | Max:     6.42 ms
+Work-efficient scan, unoptimized, non-power-of-two      Avg:     6.20 ms | Median:     6.15 ms | Min:     6.12 ms | Max:     6.67 ms
+Work-efficient scan, optimized, power-of-two            Avg:     4.61 ms | Median:     4.53 ms | Min:     4.51 ms | Max:     5.17 ms
+Work-efficient scan, optimized, non-power-of-two        Avg:     4.58 ms | Median:     4.56 ms | Min:     4.53 ms | Max:     4.74 ms
+Thrust scan, power-of-two                               Avg:     0.67 ms | Median:     0.66 ms | Min:     0.66 ms | Max:     0.70 ms
+Thrust scan, non-power-of-two                           Avg:     0.69 ms | Median:     0.67 ms | Min:     0.66 ms | Max:     0.84 ms
+
+*****************************
+** COMPACTION PERFORMANCE  **
+*****************************
+CPU compact without scan, power-of-two                  Avg:    15.77 ms | Median:    15.67 ms | Min:    15.64 ms | Max:    16.24 ms
+CPU compact without scan, non-power-of-two              Avg:    16.38 ms | Median:    15.74 ms | Min:    15.63 ms | Max:    19.40 ms
+CPU compact with scan, power-of-two                     Avg:    44.42 ms | Median:    44.53 ms | Min:    41.30 ms | Max:    45.87 ms
+CPU compact with scan, non-power-of-two                 Avg:    45.64 ms | Median:    45.37 ms | Min:    44.26 ms | Max:    48.91 ms
+Work-efficient compact, power-of-two                    Avg:     5.94 ms | Median:     5.89 ms | Min:     5.83 ms | Max:     6.39 ms
+Work-efficient compact, non-power-of-two                Avg:     5.90 ms | Median:     5.88 ms | Min:     5.86 ms | Max:     6.02 ms
+Thrust remove_if, power-of-two                          Avg:     0.79 ms | Median:     0.79 ms | Min:     0.70 ms | Max:     0.86 ms
+Thrust remove_if, non-power-of-two                      Avg:     0.88 ms | Median:     0.89 ms | Min:     0.76 ms | Max:     0.96 ms
+```
